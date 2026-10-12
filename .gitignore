@@ -1,1 +1,4 @@
 build
+# Log e PID di mcp/dicecloud/local/dicecloud.sh (vault ObsidianHelder)
+dicecloud.log
+dicecloud.pid
