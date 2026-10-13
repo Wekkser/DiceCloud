@@ -133,10 +133,21 @@ export async function applyTriggers(
 ) {
   const triggerIds = get(prop, triggerPath);
   if (!triggerIds) return;
+  // master-ai: the triggers belong to the creature that owns `prop`, which is not always the acting creature
+  // (a monster damaging a character fires the character's "when I take damage" triggers). They were looked up
+  // among the actor's properties, so they never fired; and their condition and `self` would have meant the
+  // actor. Run them as the owner: its properties, its variables, `self` = the owner.
+  const ownerId = prop?.root?.collection === 'creatures' ? prop.root.id : action.creatureId;
+  const actorId = action.creatureId;
   for (const triggerId of triggerIds) {
-    const trigger = await getSingleProperty(action.creatureId, triggerId);
+    const trigger = await getSingleProperty(ownerId, triggerId);
     if (!trigger) continue;
-    await applyTask(action, { prop: trigger, targetIds }, inputProvider);
+    action.creatureId = ownerId;
+    try {
+      await applyTask(action, { prop: trigger, targetIds }, inputProvider);
+    } finally {
+      action.creatureId = actorId;
+    }
   }
 }
 
