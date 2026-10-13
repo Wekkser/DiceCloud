@@ -27,7 +27,7 @@ function assertCanRunCombat(tabletopId: string, userId: string | null) {
   return tabletop;
 }
 
-function numberFromVariable(creatureId: string, scope: any, name: string, field: 'value' | 'modifier') {
+function numberFromVariable(creatureId: string, scope: any, name: string, field: 'value' | 'modifier' | 'advantage') {
   let variable = scope?.[name];
   if (variable?._propId) variable = CreatureProperties.findOne(variable._propId.split('_')[0]);
   const n = variable?.[field];
@@ -40,6 +40,13 @@ export function initiativeBonus(creatureId: string) {
   return numberFromVariable(creatureId, scope, 'initiative', 'value')
     ?? numberFromVariable(creatureId, scope, 'dexterity', 'modifier')
     ?? 0;
+}
+
+/** Advantage on initiative computed by the sheet (effects on the `initiative` skill, e.g. a feat). */
+function initiativeAdvantage(creatureId: string): -1 | 0 | 1 {
+  const scope = CreatureVariables.findOne({ _creatureId: creatureId });
+  const adv = numberFromVariable(creatureId, scope, 'initiative', 'advantage');
+  return adv && adv > 0 ? 1 : adv && adv < 0 ? -1 : 0;
 }
 
 export function combatOrder(tabletopId: string): Combatant[] {
@@ -72,7 +79,13 @@ function rollInitiativeWork(tabletopId: string, creatureIds: string[] | undefine
     let total = given.get(creature._id);
     let d20: number | undefined;
     if (total === undefined) {
-      d20 = Math.floor(Random.fraction() * 20) + 1;
+      const roll = () => Math.floor(Random.fraction() * 20) + 1;
+      const advantage = initiativeAdvantage(creature._id);
+      d20 = roll();
+      if (advantage) {
+        const second = roll();
+        d20 = advantage === 1 ? Math.max(d20, second) : Math.min(d20, second);
+      }
       total = d20 + bonus;
     }
     Creatures.update(creature._id, { $set: { initiativeRoll: total } });
