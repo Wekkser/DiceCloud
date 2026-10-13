@@ -130,14 +130,17 @@ export default async function applyDamageProperty(
     } else {
       damageOnSave = Math.floor(damage / 2);
     }
+    // master-ai: the save was built in the old v2 shape ({ node, children }), which applySavingThrowProperty
+    // (v3) rejects with "Expected a savingThrow": damage with a save never worked. Build a real property.
     saveProp = {
-      node: {
-        ...prop.save,
-        name: prop.save.stat,
-        silent: prop.silent,
-      },
-      children: [],
-    }
+      _id: `${prop._id}-save`,
+      type: 'savingThrow',
+      name: prop.save.stat,
+      dc: prop.save.dc,
+      stat: prop.save.stat,
+      target: 'target',
+      silent: prop.silent,
+    };
   }
 
   if (damageTargets && damageTargets.length) {
@@ -147,11 +150,15 @@ export default async function applyDamageProperty(
 
       // If there is a saving throw, apply that first
       if (prop.save) {
+        // master-ai: each target saves once, with its own result: the save used to be rolled for every target
+        // inside the loop, and its outcome was read from the scope computed before the roll
+        const saveResult = new TaskResult([target]);
+        action.results.push(saveResult);
         await applySavingThrowProperty({
           prop: saveProp,
-          targetIds: task.targetIds,
-        }, action, result, inputProvider);
-        if (await getConstantValueFromScope('~saveSucceeded', scope)) {
+          targetIds: [target],
+        }, action, saveResult, inputProvider);
+        if (saveResult.pushScope?.['~saveSucceeded']?.value) {
           // Log the total damage
           logValue.push(toString(reduced));
           // Log the save damage
@@ -188,10 +195,10 @@ export default async function applyDamageProperty(
     // There are no targets, just log the result
     logValue.push(`**${damage}** ${suffix}`);
     if (prop.save) {
-      await applySavingThrowProperty(saveProp, action, result, inputProvider);
+      // master-ai: was called twice, once with the wrong signature
       await applySavingThrowProperty({
         prop: saveProp,
-        targetIds: task.targetIds,
+        targetIds: [],
       }, action, result, inputProvider);
       logValue.push(`**${damageOnSave}** ${suffix} on a successful save`);
     }

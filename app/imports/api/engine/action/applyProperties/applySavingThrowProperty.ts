@@ -71,6 +71,22 @@ export default async function applySavingThrowProperty(
     return applyDefaultAfterPropTasks(action, prop, [targetId], inputProvider);
   }
 
+  // master-ai: effects that make the save fail automatically (e.g. Paralyzed on Strength and Dexterity
+  // saves) are computed on the skill (`fail`) but were ignored here
+  if (save.fail) {
+    result.pushScope = {
+      ['~saveFailed']: { value: true },
+      ['~saveSucceeded']: { value: false },
+    };
+    result.appendLog({
+      name: 'Failed save',
+      value: 'Automatic failure',
+      inline: true,
+      silenced: prop.silent,
+    }, [targetId]);
+    return applyDefaultAfterPropTasks(action, prop, [targetId], inputProvider);
+  }
+
   const rollModifierText = numberToSignedString(save.value, true);
   const rollModifier = save.value;
 
