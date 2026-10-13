@@ -19,3 +19,5 @@ import '/imports/api/creature/creatures/methods/index';
 import '/imports/api/engine/action/methods/index';
 import '/imports/api/sharing/sharing';
 import '/imports/server/config/publicationStrategies';
+// Fork helder-local: diario delle sessioni dal vault Obsidian
+import '/imports/api/vault/vaultSessions';

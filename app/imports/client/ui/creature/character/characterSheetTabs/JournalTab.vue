@@ -12,6 +12,9 @@
       <div>
         <creature-summary :creature="creature" />
       </div>
+      <div>
+        <vault-sessions-card :creature-id="creatureId" />
+      </div>
       <div
         v-for="note in notes"
         :key="note._id"
@@ -37,6 +40,7 @@ import ColumnLayout from '/imports/client/ui/components/ColumnLayout.vue';
 import Creatures from '/imports/api/creature/creatures/Creatures';
 import NoteCard from '/imports/client/ui/properties/components/persona/NoteCard.vue';
 import CreatureSummary from '/imports/client/ui/creature/character/CreatureSummary.vue';
+import VaultSessionsCard from '/imports/client/ui/creature/character/VaultSessionsCard.vue';
 import CreatureProperties from '/imports/api/creature/creatureProperties/CreatureProperties';
 import tabFoldersMixin from '/imports/client/ui/properties/components/folders/tabFoldersMixin';
 import { getFilter } from '/imports/api/parenting/parentingFunctions';
@@ -46,6 +50,7 @@ export default {
     ColumnLayout,
     CreatureSummary,
     NoteCard,
+    VaultSessionsCard,
   },
   mixins: [tabFoldersMixin],
   props: {
