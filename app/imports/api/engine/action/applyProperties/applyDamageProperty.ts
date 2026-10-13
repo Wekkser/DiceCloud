@@ -1,6 +1,6 @@
 import { some, includes, difference, intersection } from 'lodash';
 
-import { getConstantValueFromScope } from '/imports/api/creature/creatures/CreatureVariables';
+import { getConstantValueFromScope, getFromScope } from '/imports/api/creature/creatures/CreatureVariables';
 import { EngineAction } from '/imports/api/engine/action/EngineActions';
 import { applyDefaultAfterPropTasks } from '/imports/api/engine/action/functions/applyTaskGroups';
 import { getEffectiveActionScope } from '/imports/api/engine/action/functions/getEffectiveActionScope';
@@ -10,7 +10,7 @@ import TaskResult from '/imports/api/engine/action/tasks/TaskResult';
 import { isFiniteNode } from '/imports/parser/parseTree/constant';
 import resolve from '/imports/parser/resolve';
 import toString from '/imports/parser/toString';
-import { getPropertiesOfType } from '/imports/api/engine/loadCreatures';
+import { getPropertiesOfType, getVariables } from '/imports/api/engine/loadCreatures';
 import applyTask from '/imports/api/engine/action/tasks/applyTask';
 import InputProvider from '/imports/api/engine/action/functions/userInput/InputProvider';
 import getEffectivePropTags from '/imports/api/engine/computation/utility/getEffectivePropTags';
@@ -170,8 +170,10 @@ export default async function applyDamageProperty(
       }
 
       // Apply weaknesses/resistances/immunities
+      // master-ai: `target` is a creature id, so `target.variables` never existed and no multiplier was ever
+      // applied. Read the target's variables, as the attack roll does for `armor` (applyActionProperty).
       damageToApply = applyDamageMultipliers({
-        target,
+        target: { variables: getVariables(target) },
         damage: damageToApply,
         damageProp: prop,
         logValue
@@ -217,7 +219,8 @@ function applyDamageMultipliers({ target, damage, damageProp, logValue }) {
   const damageType = damageProp?.damageType;
   if (!damageType) return damage;
 
-  const multiplier = target?.variables?.[damageType];
+  // master-ai: a variable may be a link to the property that defines it ({ _propId })
+  const multiplier = getFromScope(damageType, target?.variables);
   if (!multiplier) return damage;
 
   const damageTypeText = damageType == 'healing' ? 'healing' : `${damageType} damage`;
