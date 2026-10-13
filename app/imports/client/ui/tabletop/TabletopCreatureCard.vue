@@ -2,7 +2,7 @@
   <v-card
     :style="`height: ${height}px; width: ${width}px;`"
     class="tabletop-creature-card"
-    :class="{ active }"
+    :class="{ active, turn }"
     :hover="hasClickListener"
     :elevation="active ? 8 : 2"
     @mouseover="() => { if (hasClickListener) hover = true; }"
@@ -21,7 +21,7 @@
     >
       <v-card-title
         class="small-title"
-        v-text="model.name"
+        v-text="initiative === undefined ? model.name : `${initiative} · ${model.name}`"
       />
       <health-bar-progress
         v-for="bar in healthBars"
@@ -70,6 +70,12 @@ export default {
       default: 75,
     },
     active: Boolean,
+    // master-ai: initiative shown in the title and highlight of the creature whose turn it is
+    turn: Boolean,
+    initiative: {
+      type: Number,
+      default: undefined,
+    },
     targeted: Boolean,
     showTargetBtn: Boolean,
   },
@@ -122,6 +128,10 @@ export default {
 }
 .tabletop-creature-card {
   transition: all .15s ease;
+}
+.turn {
+  outline: 3px solid var(--v-accent-base, #e53935);
+  outline-offset: 2px;
 }
 </style>
 

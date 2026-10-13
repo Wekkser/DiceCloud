@@ -18,11 +18,21 @@
         >
           <v-icon> mdi-menu </v-icon>
         </v-btn>
+        <v-chip
+          v-if="model.initiative && model.initiative.active"
+          class="ma-1 flex-shrink-0"
+          color="accent"
+          label
+        >
+          Round {{ model.initiative.roundNumber }}
+        </v-chip>
         <tabletop-creature-card
           v-for="creature in creatures"
           :key="creature._id"
           :model="creature"
           :active="activeCreatureId === creature._id"
+          :turn="!!(model.initiative && model.initiative.active && model.initiative.activeCreature === creature._id)"
+          :initiative="model.initiative && model.initiative.active ? creature.initiativeRoll : undefined"
           :targeted="targets.includes(creature._id)"
           :show-target-btn="targets.includes(creature._id) || moreTargets"
           v-on="(!activeActionId || (targets.includes(creature._id) || moreTargets)) ? {
@@ -201,7 +211,11 @@ export default {
   },
   meteor: {
     creatures(){
-      return Creatures.find({ tabletopId: this.model._id });
+      // master-ai: in combat, cards follow the initiative order
+      const inCombat = this.model.initiative && this.model.initiative.active;
+      return Creatures.find({ tabletopId: this.model._id }, {
+        sort: inCombat ? { initiativeRoll: -1, name: 1 } : { name: 1 },
+      });
     },
     actions(){
       return getProperties(this.activeCreatureId, { type: 'action', actionType: { $ne: 'event'} });

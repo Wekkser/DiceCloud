@@ -36,10 +36,10 @@ const removeTabletop = new ValidatedMethod({
       _id: tabletopId,
     });
     Creatures.update({
-      tabletop: tabletopId,
+      tabletopId,
     }, {
-      $unset: { tabletop: 1 },
-    });
+      $unset: { tabletopId: 1, initiativeRoll: 1 },
+    }, { multi: true });
     return removed;
   },
 

@@ -125,5 +125,6 @@ import '/imports/api/tabletop/methods/addCreaturesToTabletop';
 import '/imports/api/tabletop/methods/updateTabletopSharing';
 import '/imports/api/tabletop/methods/addCreaturesFromLibraryToTabletop';
 import '/imports/api/tabletop/methods/removeCreatureFromTabletop';
+import '/imports/api/tabletop/methods/initiative';
 
 export default Tabletops;

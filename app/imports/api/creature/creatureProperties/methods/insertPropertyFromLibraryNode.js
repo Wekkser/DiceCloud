@@ -50,7 +50,8 @@ const insertPropertyFromLibraryNode = new ValidatedMethod({
     assertEditPermission(rootCreature, this.userId);
 
     const root = { collection: 'creatures', id: rootCreature._id };
-    const parentId = parentRef.id;
+    // master-ai: parentId only points at properties; a creature parent is expressed by root alone
+    const parentId = parentRef.collection === 'creatureProperties' ? parentRef.id : undefined;
 
     let node;
     nodeIds.forEach(nodeId => {
@@ -99,6 +100,14 @@ function insertPropertyFromNode(nodeId, root, parentId) {
 
   // set libraryNodeIds
   storeLibraryNodeReferences(nodes);
+
+  // master-ai: move the copied nodes from the library tree into the creature tree.
+  // Without this the inserted properties kept the library as root and were never seen on the sheet.
+  for (const doc of nodes) {
+    doc.root = { ...root };
+  }
+  if (parentId) node.parentId = parentId;
+  else delete node.parentId;
 
   // Give the docs new IDs without breaking internal references
   renewDocIds({

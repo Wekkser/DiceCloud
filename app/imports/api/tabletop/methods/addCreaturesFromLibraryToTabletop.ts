@@ -32,7 +32,7 @@ const addCreaturesFromLibraryToTabletop = new ValidatedMethod({
 
   mixins: [RateLimiterMixin],
   rateLimit: {
-    numRequests: 1,
+    numRequests: 10, // master-ai: was 1 per 5 s, too few to set up an encounter
     timeInterval: 5_000,
   },
 
