@@ -8,6 +8,26 @@ import { getSingleProperty } from '/imports/api/engine/loadCreatures';
 import numberToSignedString from '/imports/api/utility/numberToSignedString';
 import { lowerCase, upperFirst } from 'lodash';
 
+/**
+ * master-ai: an action writes its changes only at the end (writeActionResults), so a second damage or healing on the
+ * same attribute in the same action (two hits of a multiattack, Cure Wounds and then a Disciple of Life trigger)
+ * started from the value before the action: the limits were checked against a stale value and hit points could go
+ * above the maximum or below zero. The changes this action already made to the property are applied first.
+ */
+function withPendingChanges(action: EngineAction, prop: any) {
+  for (const result of action.results) {
+    for (const mutation of result.mutations) {
+      for (const update of mutation.updates ?? []) {
+        if (update.propId !== prop._id) continue;
+        if (update.set) Object.assign(prop, update.set);
+        if (update.inc) {
+          for (const [key, value] of Object.entries(update.inc)) prop[key] = (prop[key] ?? 0) + (value as number);
+        }
+      }
+    }
+  }
+}
+
 export default async function applyDamagePropTask(
   task: DamagePropTask, action: EngineAction, result: TaskResult, userInput
 ): Promise<number> {
@@ -82,6 +102,7 @@ export default async function applyDamagePropTask(
   targetProp = await getSingleProperty(targetId, targetPropId);
 
   if (!targetProp) return value;
+  withPendingChanges(action, targetProp);
 
   if (operation === 'set') {
     const total = targetProp.total || 0;

@@ -3,7 +3,7 @@ import { CastSpellTask } from '/imports/api/engine/action/tasks/Task';
 import TaskResult from './TaskResult';
 import InputProvider from '/imports/api/engine/action/functions/userInput/InputProvider';
 import { getSingleProperty } from '/imports/api/engine/loadCreatures';
-import applyTask from '/imports/api/engine/action/tasks/applyTask';
+import applyTask, { setAncestorScope } from '/imports/api/engine/action/tasks/applyTask';
 import applyActionProperty from '../applyProperties/applyActionProperty';
 
 export default async function applySpellProperty(
@@ -73,6 +73,11 @@ export default async function applySpellProperty(
     '~slotLevel': { value: slotLevel },
     'slotLevel': { value: slotLevel },
   };
+
+  // master-ai: the spell and its spell list in scope (`#spellList.attackRollBonus`, `#spellList.abilityMod`), as
+  // applyTask does for every other property
+  setAncestorScope(action, prop, result);
+  result.scope[`#${prop.type}`] = { _propId: prop._id };
 
   // Run the rest of the spell as if it were an action
   return applyActionProperty({

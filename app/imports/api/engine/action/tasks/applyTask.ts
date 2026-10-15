@@ -3,13 +3,26 @@ import Task, { CheckTask, DamagePropTask, ItemAsAmmoTask, PropTask } from './Tas
 import TaskResult from '/imports/api/engine/action/tasks/TaskResult';
 import applyDamagePropTask from '/imports/api/engine/action/tasks/applyDamagePropTask';
 import applyItemAsAmmoTask from '/imports/api/engine/action/tasks/applyItemAsAmmoTask';
-import { getSingleProperty } from '/imports/api/engine/loadCreatures';
+import { getPropertyAncestors, getSingleProperty } from '/imports/api/engine/loadCreatures';
 import applyProperties from '/imports/api/engine/action/applyProperties';
 import InputProvider from '/imports/api/engine/action/functions/userInput/InputProvider';
 import applyCheckTask from '/imports/api/engine/action/tasks/applyCheckTask';
 import applyResetTask from '/imports/api/engine/action/tasks/applyResetTask';
 import applyCastSpellTask from '/imports/api/engine/action/tasks/applyCastSpellTask';
 import { getPropertyName } from '/imports/constants/PROPERTIES';
+
+/**
+ * master-ai: `#spellList`, `#item`… are the nearest ancestor of that type, as in the sheet computation
+ * (linkCalculationDependencies). The action scope only had the properties applied by the action itself, so while
+ * casting a spell `#spellList.abilityMod` and `#spellList.attackRollBonus` were undefined, i.e. 0: Cure Wounds
+ * healed 1d8 + 0 and spell attacks rolled +0.
+ */
+export function setAncestorScope(action: EngineAction, prop: { _id: string, root?: { id: string } }, result: TaskResult) {
+  const ancestors = getPropertyAncestors(prop.root?.id ?? action.creatureId, prop._id).sort((a, b) => b.left - a.left);
+  for (const ancestor of ancestors) {
+    result.scope[`#${ancestor.type}`] ??= { _propId: ancestor._id };
+  }
+}
 
 // DamagePropTask promises a number of actual damage done
 export default async function applyTask(
@@ -76,6 +89,7 @@ export default async function applyTask(
 
     // Create a result an push it to the action results, pass it to the apply function to modify
     const result = new TaskResult(task.targetIds);
+    setAncestorScope(action, prop, result);
     result.scope[`#${prop.type}`] = { _propId: prop._id };
     action.results.push(result);
 
