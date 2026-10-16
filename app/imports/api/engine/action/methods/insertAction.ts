@@ -15,7 +15,10 @@ export const insertAction = new ValidatedMethod({
   },
   run: function ({ action }: { action: EngineAction }) {
     const creature = getCreature(action.creatureId);
-    assertEditPermission(getCreature(creature), this.userId);
+    // master-ai: upstream passava la creatura a getCreature, che la usava come selettore su tutti i campi
+    // (Creatures.findOne(doc)): con la copia in memoria diversa dal DB (ricalcolo differito) non trovava niente e
+    // rifiutava l'azione con "No such document exists".
+    assertEditPermission(creature, this.userId);
     // Make sure the action shares the creature's tabletopId
     // It is assumed that if a character you control is in a tabletop, you have the rights
     // to do actions in that tabletop
